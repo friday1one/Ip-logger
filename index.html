@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Project Sentinel: A personal, secure dashboard for monitoring network IP changes, internet speed, and service downtime.">
+    <meta name="keywords" content="ip logger, network monitor, internet speed test, uptime monitor, sentinel, dashboard">
+    
+    <title>Project Sentinel | Network Dashboard</title>
+
+    <!-- Favicon (Self-contained SVG) -->
+    <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='20' fill='%230f172a'/%3E%3Cpath d='M62,20 L40,42 L62,42 L38,80 L38,58 L18,58' fill='none' stroke='%2322d3ee' stroke-width='8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E">
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.2/dist/chart.umd.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/luxon@3.4.4/build/global/luxon.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+        :root {
+            --slate-900: #0f172a;
+            --slate-800: #1e293b;
+            --slate-700: #334155;
+            --slate-600: #475569;
+            --slate-500: #64748b;
+            --slate-400: #94a3b8;
+            --slate-300: #cbd5e1;
+            --cyan-400: #22d3ee;
+            --cyan-500: #06b6d4;
+            --cyan-600: #0891b2;
+            --white: #ffffff;
+            --red-500: #ef4444;
+            --green-500: #22c55e;
+            --emerald-600: #059669;
+            --emerald-700: #047857;
+        }
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--slate-900);
+        }
+        .card {
+            background-color: var(--slate-800);
+            border: 1px solid var(--slate-700);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+        }
+        .card-header {
+            border-bottom: 1px solid var(--slate-700);
+            padding-bottom: 1rem;
+            margin-bottom: 1rem;
+        }
+        .scroll-container::-webkit-scrollbar { width: 8px; }
+        .scroll-container::-webkit-scrollbar-track { background: var(--slate-800); }
+        .scroll-container::-webkit-scrollbar-thumb { background: var(--slate-600); border-radius: 4px; }
+        .scroll-container::-webkit-scrollbar-thumb:hover { background: var(--slate-500); }
+        
+        @keyframes pulse { 50% { opacity: .5; } }
+        .skeleton-loader {
+            background-color: var(--slate-700);
+            border-radius: 0.25rem;
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        #gauge-needle {
+            transition: transform 1s cubic-bezier(0.23, 1, 0.32, 1);
+            transform-origin: bottom center;
+        }
+        .filter-btn {
+            background-color: var(--slate-700);
+            color: var(--slate-300);
+        }
+        .filter-btn.active {
+            background-color: var(--cyan-500);
+            color: var(--white);
+            font-weight: 600;
+        }
+        .modal {
+            transition: opacity 0.3s ease;
+            backdrop-filter: blur(4px);
+        }
+        .modal-content {
+            transition: transform 0.3s ease;
+        }
+    </style>
+</head>
+<body class="text-slate-300 antialiased">
+
+    <!-- Header -->
+    <header class="p-4 sm:p-6 mb-4">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <div>
+                <h1 class="text-2xl font-bold text-white">Project Sentinel</h1>
+                <p class="text-slate-400">Personal Network Monitoring Dashboard</p>
+            </div>
+            <div id="live-time" class="text-right">
+                 <p class="font-medium text-white"></p>
+                 <p class="text-sm text-slate-400"></p>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto p-4 sm:p-6 space-y-6">
+        <!-- Grid Layout -->
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+            <!-- Left Column -->
+            <div class="lg:col-span-1 space-y-6">
+                <!-- Current IP Status -->
+                <div class="card">
+                    <div class="card-header flex justify-between items-center">
+                        <div>
+                            <h2 class="text-xl font-semibold text-white">Live Status</h2>
+                            <p class="text-sm text-slate-400">Your current public network details.</p>
+                        </div>
+                        <button id="refresh-live-status-btn" title="Refresh Live Status" class="p-2 rounded-full hover:bg-slate-700 transition-colors">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-slate-400" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd" /></svg>
+                        </button>
+                    </div>
+                    <div id="current-status-content" class="space-y-2 text-sm">
+                        <!-- Skeleton Loader -->
+                        <div class="space-y-3 animate-pulse">
+                            <div class="grid grid-cols-3 gap-4"><div class="h-4 bg-slate-700 rounded col-span-1"></div><div class="h-4 bg-slate-700 rounded col-span-2"></div></div>
+                            <div class="grid grid-cols-3 gap-4"><div class="h-4 bg-slate-700 rounded col-span-1"></div><div class="h-4 bg-slate-700 rounded col-span-2"></div></div>
+                            <div class="grid grid-cols-3 gap-4"><div class="h-4 bg-slate-700 rounded col-span-1"></div><div class="h-4 bg-slate-700 rounded col-span-2"></div></div>
+                            <div class="grid grid-cols-3 gap-4"><div class="h-4 bg-slate-700 rounded col-span-1"></div><div class="h-4 bg-slate-700 rounded col-span-2"></div></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Internet Speed Test -->
+                <div class="card">
+                     <div class="card-header"><h2 class="text-xl font-semibold text-white">Internet Speed</h2><p class="text-sm text-slate-400">Client-side connection performance.</p></div>
+                    <div>
+                        <div class="relative w-full max-w-[250px] mx-auto">
+                            <svg viewBox="0 0 120 120"><path d="M 10 90 A 40 40 0 1 1 110 90" fill="none" stroke="#334155" stroke-width="12" stroke-linecap="round"/><path id="gauge-arc" d="M 10 90 A 40 40 0 1 1 110 90" fill="none" stroke="url(#gauge-gradient)" stroke-width="12" stroke-linecap="round" stroke-dasharray="251.2" stroke-dashoffset="251.2" style="transition: stroke-dashoffset 1s ease-in-out;"/><path id="gauge-needle" d="M 60 90 L 60 20" stroke="#cbd5e1" stroke-width="3" stroke-linecap="round" style="transform: rotate(-135deg); transition: transform 1s cubic-bezier(0.23, 1, 0.32, 1); transform-origin: bottom center;"/><circle cx="60" cy="90" r="5" fill="#cbd5e1"/><defs><linearGradient id="gauge-gradient" x1="0%" y1="0%" x2="100%" y2="0%"><stop offset="0%" stop-color="#22d3ee" /><stop offset="100%" stop-color="#0ea5e9" /></linearGradient></defs></svg>
+                            <div class="absolute inset-0 flex flex-col items-center pb-4"><p class="text-4xl font-bold text-white"><span id="download-speed-gauge">--</span></p><p class="text-sm text-slate-400 -mt-1">Mbps DL</p></div>
+                        </div>
+                        <div class="flex justify-around mt-4 text-center">
+                            <div><p class="text-2xl font-semibold text-white"><span id="upload-speed">--</span></p><p class="text-xs text-slate-400">Mbps UL</p></div>
+                            <div><p class="text-2xl font-semibold text-white"><span id="latency">--</span></p><p class="text-xs text-slate-400">ms Ping</p></div>
+                        </div>
+                        <button id="run-speed-test" class="mt-6 w-full bg-cyan-600 hover:bg-cyan-700 text-white font-semibold py-3 px-6 rounded-lg transition-all duration-200">Run Speed Test</button>
+                        <p id="speed-test-status" class="text-xs text-slate-500 mt-2 h-4 text-center"></p>
+                    </div>
+                </div>
+
+                <!-- Downtime Events -->
+                <div class="card">
+                    <div class="card-header"><h2 class="text-xl font-semibold text-white">Downtime Events</h2></div>
+                    <div id="downtime-log" class="scroll-container h-40 overflow-y-auto text-sm space-y-3">
+                         <div class="space-y-3 animate-pulse"><div class="h-8 bg-slate-700 rounded"></div><div class="h-8 bg-slate-700 rounded"></div><div class="h-8 bg-slate-700 rounded"></div></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- Speed History Chart -->
+                <div class="card">
+                    <div class="card-header flex justify-between items-center"><h2 class="text-xl font-semibold text-white">Speed History</h2><div id="speed-history-filters" class="flex space-x-1"><button data-range="7" class="filter-btn active text-xs px-2 py-1 rounded-md">7D</button><button data-range="30" class="filter-btn text-xs px-2 py-1 rounded-md">30D</button></div></div>
+                    <div class="h-64"><canvas id="speed-history-chart"></canvas></div>
+                </div>
+
+                 <!-- IP History Log -->
+                <div class="card">
+                    <div class="card-header flex flex-wrap justify-between items-center gap-2"><h2 class="text-xl font-semibold text-white">IP History</h2><div class="flex items-center space-x-1"><div id="ip-history-filters" class="flex space-x-1"><button data-range="1" class="filter-btn text-xs px-2 py-1 rounded-md">1D</button><button data-range="7" class="filter-btn active text-xs px-2 py-1 rounded-md">7D</button><button data-range="30" class="filter-btn text-xs px-2 py-1 rounded-md">30D</button><button data-range="all" class="filter-btn text-xs px-2 py-1 rounded-md">All</button></div><button id="export-csv-btn" class="text-xs bg-emerald-600 hover:bg-emerald-700 text-white font-semibold py-1 px-3 rounded-md">Export CSV</button></div></div>
+                    <div id="ip-history-log" class="scroll-container h-96 overflow-y-auto pr-2 space-y-4">
+                        <div class="space-y-4 animate-pulse"><div class="h-16 bg-slate-700 rounded"></div><div class="h-16 bg-slate-700 rounded"></div><div class="h-16 bg-slate-700 rounded"></div><div class="h-16 bg-slate-700 rounded"></div></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    
+    <!-- IP Details Modal -->
+    <div id="ip-details-modal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 hidden modal">
+        <div id="ip-details-modal-content" class="modal-content card max-w-lg w-full transform scale-95 opacity-0">
+             <div class="card-header flex justify-between items-center">
+                <h2 class="text-xl font-semibold text-white">Log Details</h2>
+                <button id="close-ip-modal-btn" class="p-2 rounded-full hover:bg-slate-700 transition-colors">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-slate-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+            <div id="modal-body" class="text-sm">
+                <!-- Content will be injected here -->
+            </div>
+        </div>
+    </div>
+
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+
+            const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' || window.location.hostname === '';
+            
+            const mockData = {
+                currentIp: { ip: "103.149.208.21", org: "Cyber Internet Services (Pvt) Ltd.", city: "Karachi", region: "Sindh", country: "PK", timezone: "Asia/Karachi", loc: "24.8608,67.0104", postal: "74000", hostname: "103.149.208.21" },
+                ipLogs: [
+                    { ip: "103.149.208.21", org: "Cyber Internet Services (Pvt) Ltd.", city: "Karachi", region: "Sindh", country: "PK", timezone: "Asia/Karachi", loc: "24.8608,67.0104", postal: "74000", hostname: "103.149.208.21", timestamp: new Date().toISOString() },
+                    { ip: "202.163.98.11", org: "Trans World Enterprise Services (Pvt) Ltd.", city: "Lahore", region: "Punjab", country: "PK", timezone: "Asia/Karachi", loc: "31.5497,74.3436", postal: "54000", hostname: "202.163.98.11", timestamp: new Date(Date.now() - 28 * 60 * 60 * 1000).toISOString() },
+                    { ip: "119.160.97.150", org: "Pakistan Telecommunication Company Limited", city: "Islamabad", region: "Islamabad", country: "PK", timezone: "Asia/Karachi", loc: "33.7294,73.0931", postal: "44000", hostname: "119.160.97.150", timestamp: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000).toISOString() },
+                    { ip: "115.42.85.113", org: "WATEEN TELECOM (PVT) LTD.", city: "Faisalabad", region: "Punjab", country: "PK", timezone: "Asia/Karachi", loc: "31.4180,73.0792", postal: "38000", hostname: "115.42.85.113", timestamp: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString() }
+                ],
+                downtimeEvents: [
+                    { event_type: "UP", timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString() },
+                    { event_type: "DOWN", timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000 - 5 * 60 * 1000).toISOString() }
+                ],
+                speedTests: [
+                    { timestamp: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString(), download_mbps: 45.12 },
+                    { timestamp: new Date(Date.now() - 8 * 24 * 60 * 60 * 1000).toISOString(), download_mbps: 51.34 },
+                    { timestamp: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString(), download_mbps: 48.90 },
+                    { timestamp: new Date(Date.now() - 2 * 24 * 60 * 60 * 1000).toISOString(), download_mbps: 55.78 },
+                ]
+            };
+
+            const ui = {
+                liveTime: document.getElementById('live-time'),
+                currentStatus: document.getElementById('current-status-content'),
+                ipHistory: document.getElementById('ip-history-log'),
+                downtimeLog: document.getElementById('downtime-log'),
+                runSpeedTestBtn: document.getElementById('run-speed-test'),
+                downloadSpeedGauge: document.getElementById('download-speed-gauge'),
+                uploadSpeed: document.getElementById('upload-speed'),
+                latency: document.getElementById('latency'),
+                speedTestStatus: document.getElementById('speed-test-status'),
+                gaugeNeedle: document.getElementById('gauge-needle'),
+                gaugeArc: document.getElementById('gauge-arc'),
+                exportCsvBtn: document.getElementById('export-csv-btn'),
+                ipHistoryFilters: document.getElementById('ip-history-filters'),
+                speedHistoryFilters: document.getElementById('speed-history-filters'),
+                speedHistoryChart: document.getElementById('speed-history-chart'),
+                ipDetailsModal: document.getElementById('ip-details-modal'),
+                ipDetailsModalContent: document.getElementById('ip-details-modal-content'),
+                closeIpModalBtn: document.getElementById('close-ip-modal-btn'),
+                modalBody: document.getElementById('modal-body'),
+                refreshLiveStatusBtn: document.getElementById('refresh-live-status-btn')
+            };
+
+            let speedChart;
+            let currentIpLogs = []; 
+
+            const fetchData = async (ipRange = '7', speedRange = '7') => {
+                if (isLocal) {
+                    console.log(`Local mode. Simulating fetch for range: ip=${ipRange}, speed=${speedRange}`);
+                    const filteredMock = {
+                        ...mockData,
+                        ipLogs: filterLogsByRange(mockData.ipLogs, ipRange),
+                        speedTests: filterLogsByRange(mockData.speedTests, speedRange)
+                    };
+                    renderAll(filteredMock);
+                    return;
+                }
+                
+                showSkeletonLoaders();
+                try {
+                    const response = await fetch(`/.netlify/functions/get-dashboard-data?ipRange=${ipRange}&speedRange=${speedRange}`);
+                    if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
+                    const data = await response.json();
+                    renderAll(data);
+                } catch (error) {
+                    handleFetchError(error);
+                }
+            };
+            
+            const fetchLiveStatus = async () => {
+                 if (isLocal) {
+                    renderCurrentStatus(mockData.currentIp);
+                    return;
+                 }
+                 try {
+                     const response = await fetch(`/.netlify/functions/get-dashboard-data?ipRange=1`); // only need current IP
+                     if (!response.ok) throw new Error(`Network response was not ok: ${response.statusText}`);
+                     const data = await response.json();
+                     renderCurrentStatus(data.currentIp);
+                 } catch(error) {
+                     console.error("Failed to fetch live status:", error);
+                     ui.currentStatus.innerHTML = `<p class="text-red-400">Error: Could not refresh live status.</p>`;
+                 }
+            };
+
+            const renderAll = (data) => {
+                renderCurrentStatus(data.currentIp);
+                renderIpHistory(data.ipLogs);
+                renderDowntimeEvents(data.downtimeEvents);
+                renderSpeedHistoryChart(data.speedTests);
+            }
+
+            const renderCurrentStatus = (ipDetails) => {
+                if (!ipDetails || !ipDetails.ip) {
+                    ui.currentStatus.innerHTML = `<p class="text-amber-400">Could not determine current IP status.</p>`;
+                    return;
+                }
+                ui.currentStatus.innerHTML = `
+                    <dl class="grid grid-cols-3 gap-x-4 gap-y-1">
+                        <dt class="font-semibold text-slate-400 col-span-1">IP Address</dt><dd class="text-white font-mono col-span-2">${ipDetails.ip || 'N/A'}</dd>
+                        <dt class="font-semibold text-slate-400 col-span-1">Organization</dt><dd class="text-white col-span-2">${ipDetails.org || 'N/A'}</dd>
+                        <dt class="font-semibold text-slate-400 col-span-1">Location</dt><dd class="text-white col-span-2">${ipDetails.city || ''}, ${ipDetails.region || ''}, ${ipDetails.country || 'N/A'}</dd>
+                        <dt class="font-semibold text-slate-400 col-span-1">Timezone</dt><dd class="text-white col-span-2">${ipDetails.timezone || 'N/A'}</dd>
+                    </dl>
+                `;
+            };
+
+            const renderIpHistory = (logs) => {
+                currentIpLogs = logs; 
+                if (!logs || logs.length === 0) {
+                    ui.ipHistory.innerHTML = `<p class="text-slate-400 text-center">No IP history records found for this period.</p>`;
+                    return;
+                }
+                ui.ipHistory.innerHTML = logs.map((log, index) => `
+                    <div class="p-3 bg-slate-900 rounded-lg border border-slate-700/50 cursor-pointer hover:border-cyan-400 transition-colors" data-log-index="${index}">
+                        <div class="flex justify-between items-start mb-1">
+                             <p class="font-semibold font-mono text-cyan-400 text-base">${log.ip}</p>
+                             <p class="text-xs text-slate-400">${luxon.DateTime.fromISO(log.timestamp).toRelative()}</p>
+                        </div>
+                        <p class="text-xs text-slate-300">${log.org || 'No organization info'}</p>
+                        <p class="text-xs text-slate-400">${log.city || 'Unknown City'}, ${log.country || 'Unknown Country'}</p>
+                    </div>
+                `).join('');
+            };
+
+            const renderDowntimeEvents = (events) => {
+                if (!events || events.length === 0) {
+                    ui.downtimeLog.innerHTML = `<p class="text-slate-400 text-center text-sm">No downtime events recorded. Good!</p>`;
+                    return;
+                }
+                 ui.downtimeLog.innerHTML = events.map(event => {
+                    const isDown = event.event_type.toUpperCase() === 'DOWN';
+                    return `
+                    <div class="flex items-center space-x-3"><span class="flex-shrink-0 h-2.5 w-2.5 rounded-full ${isDown ? 'bg-red-500' : 'bg-green-500'}"></span><div>
+                            <p class="font-medium text-slate-200">${isDown ? 'Downtime Detected' : 'Service Restored'}</p>
+                            <p class="text-xs text-slate-400">${luxon.DateTime.fromISO(event.timestamp).toLocaleString(luxon.DateTime.DATETIME_SHORT)}</p>
+                        </div></div>`
+                }).join('');
+            };
+            
+            const renderSpeedHistoryChart = (tests) => {
+                const ctx = ui.speedHistoryChart.getContext('2d');
+                if (!tests || tests.length === 0) {
+                    if (speedChart) speedChart.destroy();
+                    ctx.clearRect(0, 0, ui.speedHistoryChart.width, ui.speedHistoryChart.height);
+                    ctx.fillStyle = '#64748b';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('No speed test data available for this period.', ui.speedHistoryChart.width / 2, ui.speedHistoryChart.height / 2);
+                    return;
+                }
+                
+                const labels = tests.map(t => luxon.DateTime.fromISO(t.timestamp).toFormat('MMM d'));
+                const data = tests.map(t => t.download_mbps);
+
+                if(speedChart) speedChart.destroy();
+
+                speedChart = new Chart(ctx, {
+                    type: 'line',
+                    data: { labels: labels, datasets: [{ label: 'Download Speed (Mbps)', data: data, borderColor: '#22d3ee', backgroundColor: 'rgba(34, 211, 238, 0.1)', fill: true, tension: 0.4, pointBackgroundColor: '#22d3ee', pointHoverRadius: 6, pointHoverBackgroundColor: '#fff' }] },
+                    options: { responsive: true, maintainAspectRatio: false, scales: { y: { beginAtZero: true, ticks: { color: '#94a3b8' }, grid: { color: '#334155' }}, x: { ticks: { color: '#94a3b8' }, grid: { display: false } } }, plugins: { legend: { display: false }, tooltip: { backgroundColor: '#0f172a', titleFont: { size: 14, weight: 'bold' }, bodyFont: { size: 12 }, padding: 10, cornerRadius: 4, displayColors: false } } }
+                });
+            };
+
+            const runSpeedTest = async () => { /* ... (same with minor fixes) ... */
+                ui.runSpeedTestBtn.disabled = true;
+                ui.runSpeedTestBtn.textContent = 'Testing...';
+                ui.speedTestStatus.textContent = 'Measuring latency...';
+                ui.latency.textContent = '--';
+                ui.uploadSpeed.textContent = '--';
+                ui.downloadSpeedGauge.textContent = '--';
+                updateGauge(0);
+
+                let testResult = { latency_ms: -1, download_mbps: -1, upload_mbps: -1 };
+
+                try {
+                    const startTime = performance.now();
+                    const latencyEndpoint = isLocal ? 'https://cachefly.cachefly.net/1kb.test' : '/.netlify/functions/ping';
+                    await fetch(latencyEndpoint + `?t=${Date.now()}`, { method: 'HEAD', cache: 'no-store' });
+                    const endTime = performance.now();
+                    testResult.latency_ms = Math.round(endTime - startTime);
+                    ui.latency.textContent = testResult.latency_ms;
+                    
+                    ui.speedTestStatus.textContent = 'Testing download...';
+                    const dlFileSizeInBytes = 5 * 1024 * 1024; // 5MB
+                    const dlUrl = `https://cachefly.cachefly.net/5mb.test?t=${Date.now()}`;
+                    const dlStartTime = performance.now();
+                    const dlResponse = await fetch(dlUrl);
+                    await dlResponse.blob();
+                    const dlEndTime = performance.now();
+                    const dlDuration = (dlEndTime - dlStartTime) / 1000;
+                    testResult.download_mbps = parseFloat(((dlFileSizeInBytes * 8) / dlDuration / 1000 / 1000).toFixed(2));
+                    ui.downloadSpeedGauge.textContent = testResult.download_mbps;
+                    updateGauge(testResult.download_mbps);
+                    
+                    ui.speedTestStatus.textContent = 'Testing upload...';
+                    const ulEndpoint = isLocal ? null : '/.netlify/functions/speed-test-endpoint';
+                    if (ulEndpoint) {
+                         const ulFileSizeInBytes = 2 * 1024 * 1024;
+                         const ulData = new Blob([new Uint8Array(ulFileSizeInBytes)], { type: 'application/octet-stream' });
+                         const ulStartTime = performance.now();
+                         await fetch(ulEndpoint, { method: 'POST', body: ulData });
+                         const ulEndTime = performance.now();
+                         const ulDuration = (ulEndTime - ulStartTime) / 1000;
+                         testResult.upload_mbps = parseFloat(((ulFileSizeInBytes * 8) / ulDuration / 1000 / 1000).toFixed(2));
+                         ui.uploadSpeed.textContent = testResult.upload_mbps;
+                    } else {
+                        ui.uploadSpeed.textContent = 'N/A';
+                        console.log("Local mode: Upload test skipped.");
+                    }
+
+                    ui.speedTestStatus.textContent = 'Test complete!';
+                    
+                    if(!isLocal) {
+                        await fetch('/.netlify/functions/save-speed-test', {
+                            method: 'POST',
+                            body: JSON.stringify(testResult)
+                        });
+                        triggerFilteredFetch();
+                    } else {
+                        mockData.speedTests.push({timestamp: new Date().toISOString(), ...testResult});
+                        triggerFilteredFetch();
+                    }
+
+                } catch (error) {
+                    console.error("Speed test failed:", error);
+                    ui.speedTestStatus.textContent = 'Speed test failed.';
+                } finally {
+                    ui.runSpeedTestBtn.disabled = false;
+                    ui.runSpeedTestBtn.textContent = 'Run Speed Test Again';
+                }
+            };
+            
+            const updateGauge = (mbps) => {
+                const maxSpeed = 100;
+                const maxAngle = 135;
+                const percentage = Math.min(mbps / maxSpeed, 1);
+                const angle = (percentage * (maxAngle * 2)) - maxAngle;
+                ui.gaugeNeedle.style.transform = `rotate(${angle}deg)`;
+                const arcLength = ui.gaugeArc.getTotalLength();
+                ui.gaugeArc.style.strokeDashoffset = arcLength * (1 - percentage);
+            };
+
+            const exportToCsv = () => { /* ... (same) ... */
+                if(!currentIpLogs || currentIpLogs.length === 0) {
+                    alert("No log data to export.");
+                    return;
+                }
+                const headers = "timestamp,ip,hostname,city,region,country,loc,org,postal,timezone\n";
+                const csvContent = currentIpLogs.map(log => {
+                    const row = [
+                        log.timestamp, log.ip, log.hostname, log.city, log.region, 
+                        log.country, log.loc, log.org, log.postal, log.timezone
+                    ];
+                    return row.map(val => `"${(val || '').toString().replace(/"/g, '""')}"`).join(',');
+                }).join('\n');
+                const blob = new Blob([headers + csvContent], { type: 'text/csv;charset=utf-8;' });
+                const link = document.createElement("a");
+                const url = URL.createObjectURL(blob);
+                link.setAttribute("href", url);
+                link.setAttribute("download", `sentinel_ip_history_${new Date().toISOString().split('T')[0]}.csv`);
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+            };
+
+            const setupFilters = (filterContainer, callback) => {
+                filterContainer.addEventListener('click', (e) => {
+                    if(e.target.tagName === 'BUTTON') {
+                        filterContainer.querySelector('.active').classList.remove('active');
+                        e.target.classList.add('active');
+                        callback();
+                    }
+                });
+            };
+            
+            const triggerFilteredFetch = () => {
+                const ipRange = ui.ipHistoryFilters.querySelector('.active').dataset.range;
+                const speedRange = ui.speedHistoryFilters.querySelector('.active').dataset.range;
+                fetchData(ipRange, speedRange);
+            };
+            
+            const filterLogsByRange = (logs, range) => {
+                if(range === 'all') return logs;
+                const now = luxon.DateTime.now();
+                const days = parseInt(range);
+                return logs.filter(log => {
+                    const logDate = luxon.DateTime.fromISO(log.timestamp);
+                    return now.diff(logDate, 'days').days <= days;
+                });
+            };
+
+            const showIpDetailsModal = (log) => {
+                ui.modalBody.innerHTML = `
+                    <dl class="detail-grid">
+                        <dt>Timestamp</dt><dd>${luxon.DateTime.fromISO(log.timestamp).toLocaleString(luxon.DateTime.DATETIME_FULL)}</dd>
+                        <dt>IP Address</dt><dd>${log.ip || 'N/A'}</dd>
+                        <dt>Hostname</dt><dd>${log.hostname || 'N/A'}</dd>
+                        <dt>Organization</dt><dd>${log.org || 'N/A'}</dd>
+                        <dt>City</dt><dd>${log.city || 'N/A'}</dd>
+                        <dt>Region</dt><dd>${log.region || 'N/A'}</dd>
+                        <dt>Country</dt><dd>${log.country || 'N/A'}</dd>
+                        <dt>Postal Code</dt><dd>${log.postal || 'N/A'}</dd>
+                        <dt>Coordinates</dt><dd>${log.loc || 'N/A'}</dd>
+                        <dt>Timezone</dt><dd>${log.timezone || 'N/A'}</dd>
+                    </dl>
+                `;
+                ui.ipDetailsModal.classList.remove('hidden');
+                requestAnimationFrame(() => {
+                    ui.ipDetailsModalContent.classList.remove('scale-95', 'opacity-0');
+                    ui.ipDetailsModalContent.classList.add('scale-100', 'opacity-100');
+                });
+            };
+
+            const hideIpDetailsModal = () => {
+                ui.ipDetailsModalContent.classList.add('scale-95', 'opacity-0');
+                setTimeout(() => ui.ipDetailsModal.classList.add('hidden'), 300);
+            };
+            
+            ui.ipHistory.addEventListener('click', (e) => {
+                const logEntry = e.target.closest('[data-log-index]');
+                if(logEntry) {
+                    const index = parseInt(logEntry.dataset.logIndex, 10);
+                    const logData = currentIpLogs[index];
+                    if(logData) showIpDetailsModal(logData);
+                }
+            });
+            ui.closeIpModalBtn.addEventListener('click', hideIpDetailsModal);
+            ui.ipDetailsModal.addEventListener('click', (e) => {
+                if (e.target === ui.ipDetailsModal) hideIpDetailsModal();
+            });
+
+
+            const updateTime = () => {
+                const now = luxon.DateTime.now().setZone('Asia/Karachi');
+                ui.liveTime.children[0].textContent = now.toFormat('hh:mm:ss a');
+                ui.liveTime.children[1].textContent = now.toFormat('cccc, LLLL d');
+            };
+            
+            const handleFetchError = (error) => {
+                console.error("Failed to fetch dashboard data:", error);
+                ui.currentStatus.innerHTML = `<p class="text-red-400">Error: Could not load live data.</p>`;
+                ui.ipHistory.innerHTML = `<p class="text-red-400">Error: Could not load IP history.</p>`;
+                ui.downtimeLog.innerHTML = `<p class="text-red-400">Error: Could not load downtime events.</p>`;
+            };
+
+            const showSkeletonLoaders = () => {
+                const skeleton = `<div class="space-y-3 animate-pulse"><div class="h-4 bg-slate-700 rounded col-span-1"></div><div class="h-4 bg-slate-700 rounded col-span-2"></div></div>`;
+                ui.currentStatus.innerHTML = skeleton.repeat(4);
+                ui.ipHistory.innerHTML = `<div class="space-y-4 animate-pulse"><div class="h-16 bg-slate-700 rounded"></div><div class="h-16 bg-slate-700 rounded"></div><div class="h-16 bg-slate-700 rounded"></div></div>`;
+            };
+
+            // --- Initial Load & Event Listeners ---
+            updateTime();
+            setInterval(updateTime, 1000);
+            fetchData(); // Initial fetch
+            setInterval(fetchData, 5 * 60 * 1000); // Auto-refresh every 5 minutes
+
+            ui.runSpeedTestBtn.addEventListener('click', runSpeedTest);
+            ui.exportCsvBtn.addEventListener('click', exportToCsv);
+            ui.refreshLiveStatusBtn.addEventListener('click', fetchLiveStatus);
+            setupFilters(ui.ipHistoryFilters, triggerFilteredFetch);
+            setupFilters(ui.speedHistoryFilters, triggerFilteredFetch);
+
+        });
+    </script>
+</body>
+</html>

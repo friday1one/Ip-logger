@@ -1,0 +1,8 @@
+[functions]
+  # Directory for serverless functions
+  directory = "netlify/functions/"
+  # Scheduled function to log IP daily
+  [functions."log-ip-daily"]
+    schedule = "@daily"
+
+    
