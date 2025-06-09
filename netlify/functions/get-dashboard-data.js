@@ -2,53 +2,32 @@
  * -----------------------------------------------------------------------------
  * FILE: netlify/functions/get-dashboard-data.js
  * PURPOSE: Fetches all data needed for the main dashboard view from Netlify DB.
- * VERSION: 5.0 (Using Undici for stability)
+ * This is the primary function for loading the dashboard.
+ * VERSION: 6.0 (Robust and Simplified)
  * -----------------------------------------------------------------------------
  */
 
 import { neon } from '@netlify/neon';
-import { fetch } from 'undici'; // Use Undici instead of node-fetch
+import { fetch } from 'undici';
 
 export async function handler(event) {
-  // Initialize the database connection inside the handler.
   const sql = neon();
-  const { ipRange = '7', speedRange = '7' } = event.queryStringParameters;
+  const { ipRange = 'all', speedRange = 'all' } = event.queryStringParameters;
 
   try {
+    // 1. Fetch current IP details from an external API
     const ipInfoResponse = await fetch('https://ipinfo.io/json');
     if (!ipInfoResponse.ok) throw new Error(`IPinfo fetch failed with status: ${ipInfoResponse.status}`);
     const currentIp = await ipInfoResponse.json();
 
-    let ipLogs;
-    if (ipRange === 'all') {
-      ipLogs = await sql`SELECT * FROM ip_logs ORDER BY timestamp DESC`;
-    } else {
-      const days = parseInt(ipRange, 10);
-      ipLogs = await sql`
-        SELECT * FROM ip_logs 
-        WHERE timestamp >= NOW() - INTERVAL '1 day' * ${days}
-        ORDER BY timestamp DESC
-      `;
-    }
-
-    let speedTests;
-    if (speedRange === 'all') {
-        speedTests = await sql`SELECT * FROM speed_tests ORDER BY timestamp DESC`;
-    } else {
-        const days = parseInt(speedRange, 10);
-        speedTests = await sql`
-            SELECT * FROM speed_tests
-            WHERE timestamp >= NOW() - INTERVAL '1 day' * ${days}
-            ORDER BY timestamp DESC
-        `;
-    }
+    // 2. Fetch all logs and tests in parallel
+    const [ipLogs, speedTests, downtimeEvents] = await Promise.all([
+      sql`SELECT * FROM ip_logs ORDER BY timestamp DESC`,
+      sql`SELECT * FROM speed_tests ORDER BY timestamp DESC`,
+      sql`SELECT * FROM downtime_events ORDER BY timestamp DESC LIMIT 10`
+    ]);
     
-    const downtimeEvents = await sql`
-      SELECT * FROM downtime_events 
-      ORDER BY timestamp DESC 
-      LIMIT 10
-    `;
-    
+    // Return all data in a single payload
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json' },
