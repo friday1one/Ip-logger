@@ -1,7 +1,7 @@
 {
   "name": "project-sentinel",
   "version": "1.0.0",
-  "description": "Personal Network Monitoring Dashboard",
+  "description": "Personal Network Monitoring Dashboard with Authentication",
   "main": "index.html",
   "type": "module",
   "scripts": {
@@ -13,7 +13,9 @@
     "serverless",
     "ip-logger",
     "dashboard",
-    "network-monitor"
+    "network-monitor",
+    "authentication",
+    "jsonwebtoken"
   ],
   "author": "Anwaar Ul Haq",
   "license": "MIT",
@@ -21,6 +23,9 @@
     "@netlify/neon": "*",
     "undici": "^6.0.0",
     "jsonwebtoken": "^9.0.0"
+  },
+  "devDependencies": {
+    "serve": "^14.0.0",
+    "netlify-cli": "^12.0.0"
   }
 }
-
