@@ -1,46 +1,50 @@
 // -----------------------------------------------------------------------------
 // FILE: netlify/functions/log-browser-ip.js
 // PURPOSE: Receives the client's public IP from the frontend, checks if it has
-//          changed from the last logged IP, and saves it to the database,
-//          associated with the authenticated user.
-// VERSION: 1.1 (Protected and User-Specific)
+//          changed from the last logged IP for the authenticated user, and saves
+//          it to the database, associated with that user.
+// VERSION: 1.1 (Protected and User-Specific - Final)
 // -----------------------------------------------------------------------------
 
 import { neon } from '@netlify/neon';
-import { authenticate } from '../utils/auth'; // Import auth helper
+import { authenticate } from './utils/auth'; // Import auth helper from utils folder (relative path)
 
 export async function handler(event) {
+  // Ensure only POST requests are allowed.
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: JSON.stringify({ message: 'Method Not Allowed' }) };
   }
 
-  const authResult = authenticate(event); // Authenticate the request
-  if (authResult.statusCode) { // If authentication failed, authResult is an HTTP response
+  // Authenticate the incoming request.
+  const authResult = authenticate(event);
+  if (authResult.statusCode) {
     return authResult;
   }
-  const userId = authResult.userId; // Extract userId from the authenticated payload
+  const userId = authResult.userId; // Extract userId from the authenticated payload.
 
-  const sql = neon();
+  const sql = neon(); // Initialize Neon client.
   console.log(`Received request to log browser IP for user_id: ${userId}`);
 
   try {
+    // Parse the client's IP details from the request body.
     const clientIpDetails = JSON.parse(event.body);
 
+    // Basic validation for essential IP details.
     if (!clientIpDetails || !clientIpDetails.ip) {
       throw new Error("Invalid or missing IP details in request body.");
     }
 
-    // Get the most recent IP log for THIS USER from our database
+    // Get the most recent IP log for THIS AUTHENTICATED USER from the database.
     const lastLogResult = await sql`SELECT ip FROM ip_logs WHERE user_id = ${userId} ORDER BY timestamp DESC LIMIT 1`;
     const lastLoggedIp = lastLogResult.length > 0 ? lastLogResult[0].ip : null;
 
-    // Compare the received client IP with the last logged IP for this user
+    // Compare the received client IP with the last logged IP for this user.
     if (clientIpDetails.ip !== lastLoggedIp) {
       console.log(`Browser IP change detected for user ${userId}. Old: ${lastLoggedIp || 'None'}, New: ${clientIpDetails.ip}. Logging.`);
 
       const currentTimestamp = new Date().toISOString();
 
-      // Insert the new browser IP into the ip_logs table, linked to the user
+      // Insert the new browser IP into the ip_logs table, explicitly linked to the user.
       await sql`
         INSERT INTO ip_logs (ip, hostname, city, region, country, loc, org, postal, timezone, timestamp, user_id)
         VALUES (
@@ -64,6 +68,7 @@ export async function handler(event) {
     }
 
   } catch (error) {
+    // Log any errors and return a 500 Internal Server Error response.
     console.error('Error in log-browser-ip function:', error);
     return { statusCode: 500, body: JSON.stringify({ error: `Internal Server Error: ${error.message || 'Unknown error occurred.'}` }) };
   }

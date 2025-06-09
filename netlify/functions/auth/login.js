@@ -1,45 +1,51 @@
 // -----------------------------------------------------------------------------
 // FILE: netlify/functions/auth/login.js
 // PURPOSE: Handles user login (verifies password, issues a token).
-// VERSION: 1.0
+// VERSION: 1.0 (Final)
 // -----------------------------------------------------------------------------
 
 import { neon } from '@netlify/neon';
-import { hashPassword, generateToken } from '../utils/auth'; // Import auth helpers
+import { hashPassword, generateToken } from '../utils/auth'; // Import auth helpers from utils folder
 
 export async function handler(event) {
+  // Ensure only POST requests are allowed.
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: JSON.stringify({ message: 'Method Not Allowed' }) };
   }
 
-  const sql = neon();
+  const sql = neon(); // Initialize Neon client.
 
   try {
+    // Parse the request body to get email and password.
     const { email, password } = JSON.parse(event.body);
 
+    // Validate input.
     if (!email || !password) {
       return { statusCode: 400, body: JSON.stringify({ message: 'Email and password are required.' }) };
     }
 
-    // Find the user by email
+    // Query the database for a user with the provided email.
     const users = await sql`SELECT id, email, password_hash FROM users WHERE email = ${email}`;
-    const user = users[0];
+    const user = users[0]; // Get the first (and hopefully only) user found.
 
+    // If no user is found, return an authentication failure.
     if (!user) {
       return { statusCode: 401, body: JSON.stringify({ message: 'Invalid credentials.' }) };
     }
 
-    // Compare the provided password hash with the stored hash
+    // Hash the provided password and compare it with the stored hash.
     const hashedPassword = hashPassword(password);
     if (hashedPassword !== user.password_hash) {
+      // If passwords don't match, return an authentication failure.
       return { statusCode: 401, body: JSON.stringify({ message: 'Invalid credentials.' }) };
     }
 
-    // Generate a token for the authenticated user
+    // If authentication is successful, generate a new token for the user.
     const token = generateToken({ userId: user.id, email: user.email });
 
+    // Return success response with the generated token and user details.
     return {
-      statusCode: 200,
+      statusCode: 200, // 200 OK status code.
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         message: 'Login successful!',
@@ -50,6 +56,7 @@ export async function handler(event) {
     };
 
   } catch (error) {
+    // Log and return a 500 Internal Server Error response on any exception.
     console.error('Error in login function:', error);
     return { statusCode: 500, body: JSON.stringify({ error: `Internal Server Error: ${error.message}` }) };
   }

@@ -29,6 +29,7 @@
             --red-500: #ef4444;
             --green-500: #22c55e;
             --emerald-600: #059669;
+            --violet-500: #8b5cf6;
         }
         body {
             font-family: 'Inter', sans-serif;
@@ -105,92 +106,183 @@
             from { transform: rotate(360deg); }
             to { transform: rotate(0deg); }
         }
-        /* Auth specific styles */
+        /* Auth specific styles - Redesigned */
+        #auth-page {
+            background: linear-gradient(135deg, var(--slate-900) 0%, var(--slate-800) 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            padding: 1.5rem;
+        }
         .auth-container {
             background-color: var(--slate-800);
             border: 1px solid var(--slate-700);
-            border-radius: 0.75rem;
-            padding: 2.5rem;
-            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-            max-width: 400px;
-            margin: 80px auto;
+            border-radius: 1.5rem; /* More rounded */
+            padding: 3rem 2.5rem; /* More padding */
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2), 0 10px 10px -5px rgba(0, 0, 0, 0.08); /* Stronger shadow */
+            max-width: 450px; /* Slightly wider */
+            width: 100%;
             color: var(--slate-300);
+            text-align: center;
+            position: relative;
+            overflow: hidden; /* For background elements */
+        }
+        .auth-container::before {
+            content: '';
+            position: absolute;
+            top: -50px;
+            left: -50px;
+            width: 150px;
+            height: 150px;
+            background: var(--cyan-500);
+            border-radius: 50%;
+            opacity: 0.1;
+            filter: blur(50px);
+        }
+         .auth-container::after {
+            content: '';
+            position: absolute;
+            bottom: -50px;
+            right: -50px;
+            width: 200px;
+            height: 200px;
+            background: var(--violet-500);
+            border-radius: 50%;
+            opacity: 0.1;
+            filter: blur(60px);
+        }
+
+        .auth-logo {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--white);
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+        }
+        .auth-logo svg {
+            width: 3rem;
+            height: 3rem;
+            fill: var(--cyan-400);
+        }
+
+        .auth-title {
+            font-size: 2.25rem; /* Larger title */
+            font-weight: 700;
+            color: var(--white);
+            margin-bottom: 2rem;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
         }
         .auth-input {
             width: 100%;
-            padding: 0.75rem 1rem;
+            padding: 1rem 1.25rem; /* Larger padding */
             background-color: var(--slate-700);
             border: 1px solid var(--slate-600);
-            border-radius: 0.5rem;
+            border-radius: 0.75rem; /* More rounded */
             color: var(--white);
-            font-size: 1rem;
+            font-size: 1.125rem; /* Larger text */
             outline: none;
-            transition: border-color 0.2s ease-in-out;
+            transition: border-color 0.2s ease-in-out, box-shadow 0.2s ease-in-out;
         }
         .auth-input:focus {
             border-color: var(--cyan-400);
+            box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.3); /* Focus ring */
         }
         .auth-button {
             width: 100%;
-            padding: 0.75rem 1.5rem;
-            border-radius: 0.5rem;
-            font-weight: 600;
-            transition: background-color 0.2s ease-in-out;
+            padding: 1rem 1.5rem; /* Larger padding */
+            border-radius: 0.75rem; /* More rounded */
+            font-weight: 700; /* Bolder text */
+            font-size: 1.125rem;
+            transition: all 0.3s ease;
             cursor: pointer;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
         }
         .auth-button-primary {
-            background-color: var(--cyan-600);
+            background: linear-gradient(90deg, var(--cyan-500) 0%, var(--cyan-400) 100%);
             color: var(--white);
+            box-shadow: 0 5px 15px rgba(6, 182, 212, 0.3);
         }
         .auth-button-primary:hover:not(:disabled) {
-            background-color: var(--cyan-700);
+            background: linear-gradient(90deg, var(--cyan-400) 0%, var(--cyan-500) 100%);
+            box-shadow: 0 8px 20px rgba(6, 182, 212, 0.4);
+            transform: translateY(-2px);
         }
         .auth-button-secondary {
             background-color: transparent;
             border: 1px solid var(--slate-600);
             color: var(--slate-300);
+            box-shadow: 0 3px 10px rgba(0, 0, 0, 0.1);
         }
         .auth-button-secondary:hover:not(:disabled) {
-            background-color: var(--slate-700);
+            background-color: var(--slate-600);
+            color: var(--white);
+            transform: translateY(-1px);
         }
         .auth-button:disabled {
-            opacity: 0.6;
+            opacity: 0.5;
             cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
         }
         .auth-error {
             color: var(--red-500);
-            font-size: 0.875rem;
-            margin-top: 0.5rem;
+            font-size: 0.95rem;
+            margin-top: 1rem;
             text-align: center;
+            font-weight: 500;
         }
         .auth-success {
             color: var(--green-500);
-            font-size: 0.875rem;
-            margin-top: 0.5rem;
+            font-size: 0.95rem;
+            margin-top: 1rem;
             text-align: center;
+            font-weight: 500;
+        }
+        .toggle-auth-link {
+            display: inline-block;
+            margin-top: 1.5rem;
+            font-size: 0.9rem;
+            color: var(--slate-400);
+            transition: color 0.2s ease-in-out;
+        }
+        .toggle-auth-link:hover {
+            color: var(--cyan-400);
+            text-decoration: underline;
         }
     </style>
 </head>
 <body class="text-slate-300 antialiased">
 
     <!-- Authentication Page -->
-    <div id="auth-page" class="min-h-screen flex items-center justify-center p-4">
+    <div id="auth-page">
         <div class="auth-container">
-            <h2 id="auth-title" class="text-3xl font-bold text-white text-center mb-6">Login</h2>
-            <form id="auth-form" class="space-y-4">
+            <div class="auth-logo">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+                    <rect width="100" height="100" rx="20" fill="transparent"/>
+                    <path d="M62,20 L40,42 L62,42 L38,80 L38,58 L18,58" fill="none" stroke="currentColor" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+                </svg>
+                Project Sentinel
+            </div>
+            <h2 id="auth-title" class="auth-title">Login</h2>
+            <form id="auth-form" class="space-y-5">
                 <div>
-                    <label for="email" class="block text-sm font-medium mb-1">Email</label>
-                    <input type="email" id="email" class="auth-input" placeholder="your@example.com" required>
+                    <label for="email" class="sr-only">Email</label>
+                    <input type="email" id="email" class="auth-input" placeholder="Email Address" required>
                 </div>
                 <div>
-                    <label for="password" class="block text-sm font-medium mb-1">Password</label>
-                    <input type="password" id="password" class="auth-input" placeholder="••••••••" required>
+                    <label for="password" class="sr-only">Password</label>
+                    <input type="password" id="password" class="auth-input" placeholder="Password" required>
                 </div>
                 <button type="submit" id="auth-submit-btn" class="auth-button auth-button-primary">Login</button>
             </form>
-            <p id="auth-message" class="auth-error mt-4"></p>
-            <div class="mt-6 text-center">
-                <button id="toggle-auth-mode" class="text-cyan-400 hover:underline text-sm">Need an account? Register</button>
+            <p id="auth-message" class="auth-error"></p>
+            <div>
+                <button id="toggle-auth-mode" class="toggle-auth-link">Need an account? Register</button>
             </div>
         </div>
     </div>
@@ -398,7 +490,7 @@
                 const password = ui.passwordInput.value;
 
                 try {
-                    // CORRECTED: Using hyphenated paths for Netlify Functions in subdirectories
+                    // Corrected: Using hyphenated paths for Netlify Functions in subdirectories
                     const endpoint = currentAuthMode === 'login' ? '/.netlify/functions/auth-login' : '/.netlify/functions/auth-register';
                     const response = await fetch(endpoint, {
                         method: 'POST',
@@ -480,7 +572,7 @@
                 }
 
                 try {
-                    // CORRECTED: Using hyphenated path for Netlify Function
+                    // Corrected: Using hyphenated path for Netlify Function
                     const response = await fetch(`/.netlify/functions/get-dashboard-data`, {
                         headers: { 'Authorization': `Bearer ${authToken}` }
                     });
@@ -559,7 +651,7 @@
                       throw new Error("Failed to fetch valid browser IP details from ipinfo.io.");
                     }
 
-                    // CORRECTED: Using hyphenated path for Netlify Function
+                    // Corrected: Using hyphenated path for Netlify Function
                     const response = await fetch(`/.netlify/functions/log-browser-ip`, {
                         method: 'POST',
                         headers: {
@@ -608,10 +700,10 @@
                     };
                     setTimeout(() => {
                         Object.assign(testResult, simulatedTest); // Merge simulated results
-                        ui.latency.textContent = testResult.latency_ms;
-                        ui.downloadSpeedGauge.textContent = testResult.download_mbps;
-                        updateGauge(testResult.download_mbps);
-                        ui.uploadSpeed.textContent = testResult.upload_mbps;
+                        ui.latency.textContent = simulatedTest.latency_ms;
+                        ui.downloadSpeedGauge.textContent = simulatedTest.download_mbps;
+                        updateGauge(simulatedTest.download_mbps);
+                        ui.uploadSpeed.textContent = simulatedTest.upload_mbps;
                         ui.speedTestStatus.textContent = 'Test complete (Local)!';
                         mockData.speedTests.unshift({timestamp: new Date().toISOString(), ...testResult});
                         allSpeedTests = [...mockData.speedTests];
@@ -650,7 +742,7 @@
                     // The save-speed-test function is designed to *save* data, not receive a large upload for bandwidth testing.
                     // For a proper upload test, you'd need a backend function that simply accepts a large POST body.
                     // For now, we'll send a small dummy request to save-speed-test for demonstration.
-                    // CORRECTED: Using hyphenated path for Netlify Function
+                    // Corrected: Using hyphenated path for Netlify Function
                     const ulEndpoint = '/.netlify/functions/save-speed-test'; 
                     if (ulEndpoint) {
                          const ulFileSizeInBytes = 2 * 1024 * 1024; // This is the conceptual size for the test
@@ -669,7 +761,7 @@
                     ui.speedTestStatus.textContent = 'Test complete!';
 
                     // This fetch call will save the actual testResult.
-                    // CORRECTED: Using hyphenated path for Netlify Function
+                    // Corrected: Using hyphenated path for Netlify Function
                     await fetch('/.netlify/functions/save-speed-test', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },

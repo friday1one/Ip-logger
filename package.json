@@ -1,16 +1,26 @@
 {
-  "name": "project-sentinel-functions",
+  "name": "project-sentinel",
   "version": "1.0.0",
+  "description": "Personal Network Monitoring Dashboard",
+  "main": "index.html",
   "type": "module",
-  "description": "Backend functions for Project Sentinel using Netlify DB",
-  "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "serve .",
+    "deploy": "netlify deploy"
   },
-  "author": "",
-  "license": "ISC",
+  "keywords": [
+    "netlify",
+    "serverless",
+    "ip-logger",
+    "dashboard",
+    "network-monitor"
+  ],
+  "author": "Anwaar Ul Haq",
+  "license": "MIT",
   "dependencies": {
     "@netlify/neon": "*",
-    "undici": "^6.19.2"
+    "undici": "^6.0.0",
+    "jsonwebtoken": "^9.0.0"
   }
 }
+
