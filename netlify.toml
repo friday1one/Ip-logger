@@ -10,7 +10,3 @@
     "undici",      
     "jsonwebtoken" 
   ]
-
-[[functions]]
-  function = "log-ip-daily"
-  schedule = "@daily"
