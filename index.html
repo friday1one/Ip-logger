@@ -398,7 +398,8 @@
                 const password = ui.passwordInput.value;
 
                 try {
-                    const endpoint = currentAuthMode === 'login' ? '/.netlify/functions/auth/login' : '/.netlify/functions/auth/register';
+                    // CORRECTED ENDPOINT PATHS FOR NETLIFY FUNCTIONS
+                    const endpoint = currentAuthMode === 'login' ? '/.netlify/functions/auth-login' : '/.netlify/functions/auth-register';
                     const response = await fetch(endpoint, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -557,6 +558,7 @@
                       throw new Error("Failed to fetch valid browser IP details from ipinfo.io.");
                     }
 
+                    // CORRECTED ENDPOINT PATH FOR NETLIFY FUNCTION
                     const response = await fetch(`/.netlify/functions/log-browser-ip`, {
                         method: 'POST',
                         headers: {
@@ -644,15 +646,18 @@
                     updateGauge(testResult.download_mbps);
 
                     ui.speedTestStatus.textContent = 'Testing upload...';
-                    const ulEndpoint = '/.netlify/functions/save-speed-test'; // Using this as a dummy upload endpoint
+                    // The save-speed-test function is designed to *save* data, not receive a large upload for bandwidth testing.
+                    // For a proper upload test, you'd need a backend function that simply accepts a large POST body.
+                    // For now, we'll send a small dummy request to save-speed-test for demonstration.
+                    const ulEndpoint = '/.netlify/functions/save-speed-test'; 
                     if (ulEndpoint) {
-                         const ulFileSizeInBytes = 2 * 1024 * 1024;
+                         const ulFileSizeInBytes = 2 * 1024 * 1024; // This is the conceptual size for the test
                          const ulStartTime = performance.now();
-                         // Send a small dummy payload as the actual upload data isn't processed by save-speed-test
+                         // We send a small, dummy JSON body here. A real upload test needs a different backend.
                          await fetch(ulEndpoint, {
                              method: 'POST',
                              headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
-                             body: JSON.stringify({ download_mbps: 0, upload_mbps: 0, latency_ms: 0 }) // dummy values
+                             body: JSON.stringify({ download_mbps: 0, upload_mbps: 0, latency_ms: 0 }) // dummy values sent to backend for type match
                          });
                          testResult.upload_mbps = parseFloat(((ulFileSizeInBytes * 8) / ((performance.now() - ulStartTime) / 1000) / 1000 / 1000).toFixed(2));
                          ui.uploadSpeed.textContent = testResult.upload_mbps;
@@ -661,13 +666,13 @@
                     }
                     ui.speedTestStatus.textContent = 'Test complete!';
 
+                    // This fetch call will save the actual testResult.
                     await fetch('/.netlify/functions/save-speed-test', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${authToken}` },
                         body: JSON.stringify(testResult)
                     });
-                    // Re-fetch all data to update the speed history chart
-                    await fetchData();
+                    await fetchData(); // Re-fetch all data to update the speed history chart
 
                 } catch (error) {
                     console.error("Speed test failed:", error);
