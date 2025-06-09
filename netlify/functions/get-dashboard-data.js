@@ -2,18 +2,16 @@
  * -----------------------------------------------------------------------------
  * FILE: netlify/functions/get-dashboard-data.js
  * PURPOSE: Fetches all data needed for the main dashboard view from Netlify DB.
- * VERSION: 4.0 (Robust Connection Handling)
+ * VERSION: 5.0 (Using Undici for stability)
  * -----------------------------------------------------------------------------
  */
 
 import { neon } from '@netlify/neon';
-import fetch from 'node-fetch';
+import { fetch } from 'undici'; // Use Undici instead of node-fetch
 
 export async function handler(event) {
   // Initialize the database connection inside the handler.
-  // This is the most reliable pattern for serverless functions.
   const sql = neon();
-
   const { ipRange = '7', speedRange = '7' } = event.queryStringParameters;
 
   try {

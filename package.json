@@ -11,6 +11,6 @@
   "license": "ISC",
   "dependencies": {
     "@netlify/neon": "*",
-    "node-fetch": "^3.3.2"
+    "undici": "^6.19.2"
   }
 }

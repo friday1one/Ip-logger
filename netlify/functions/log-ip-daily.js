@@ -2,11 +2,11 @@
 // -----------------------------------------------------------------------------
 // FILE: netlify/functions/log-ip-daily.js
 // PURPOSE: A scheduled function (@daily) to automatically log IP details.
-// VERSION: 4.0 (Robust Connection Handling)
+// VERSION: 5.0 (Using Undici for stability)
 // -----------------------------------------------------------------------------
 
 import { neon } from '@netlify/neon';
-import fetch from 'node-fetch';
+import { fetch } from 'undici';
 
 export async function handler() {
   const sql = neon();
@@ -33,3 +33,4 @@ export async function handler() {
     return { statusCode: 500, body: JSON.stringify({ error: error.message }) };
   }
 }
+
