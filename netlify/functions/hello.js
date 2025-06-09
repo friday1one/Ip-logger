@@ -7,6 +7,6 @@ export async function handler() {
     return {
         statusCode: 200,
         headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-        body: JSON.stringify({ message: 'Hello from your test function v2!' }),
+        body: JSON.stringify({ message: 'Hello from your test function v4!' }),
     };
 }

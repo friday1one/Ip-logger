@@ -2,16 +2,17 @@
 // -----------------------------------------------------------------------------
 // FILE: netlify/functions/save-speed-test.js
 // PURPOSE: Saves a new speed test result to Netlify DB.
+// VERSION: 4.0 (Robust Connection Handling)
 // -----------------------------------------------------------------------------
 
-import postgres from 'postgres';
-
-const sql = postgres(process.env.NETLIFY_DATABASE_URL, { ssl: 'require' });
+import { neon } from '@netlify/neon';
 
 export async function handler(event) {
   if (event.httpMethod !== 'POST') {
     return { statusCode: 405, body: 'Method Not Allowed' };
   }
+  
+  const sql = neon();
 
   try {
     const data = JSON.parse(event.body);

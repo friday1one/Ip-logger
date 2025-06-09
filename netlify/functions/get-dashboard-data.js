@@ -2,26 +2,25 @@
  * -----------------------------------------------------------------------------
  * FILE: netlify/functions/get-dashboard-data.js
  * PURPOSE: Fetches all data needed for the main dashboard view from Netlify DB.
+ * VERSION: 4.0 (Robust Connection Handling)
  * -----------------------------------------------------------------------------
  */
 
-import postgres from 'postgres';
+import { neon } from '@netlify/neon';
 import fetch from 'node-fetch';
 
-// The NETLIFY_DATABASE_URL is automatically provided by Netlify's build process.
-const sql = postgres(process.env.NETLIFY_DATABASE_URL, { ssl: 'require' });
-
 export async function handler(event) {
-  // Get query parameters for filtering
+  // Initialize the database connection inside the handler.
+  // This is the most reliable pattern for serverless functions.
+  const sql = neon();
+
   const { ipRange = '7', speedRange = '7' } = event.queryStringParameters;
 
   try {
-    // 1. Fetch current IP details from an external API
     const ipInfoResponse = await fetch('https://ipinfo.io/json');
     if (!ipInfoResponse.ok) throw new Error(`IPinfo fetch failed with status: ${ipInfoResponse.status}`);
     const currentIp = await ipInfoResponse.json();
 
-    // 2. Fetch IP logs from Netlify DB based on the requested range
     let ipLogs;
     if (ipRange === 'all') {
       ipLogs = await sql`SELECT * FROM ip_logs ORDER BY timestamp DESC`;
@@ -34,9 +33,8 @@ export async function handler(event) {
       `;
     }
 
-    // 3. Fetch speed tests from Netlify DB based on the requested range
     let speedTests;
-    if (speedRange === 'all') { // Though the UI doesn't have 'all' for speed, we support it.
+    if (speedRange === 'all') {
         speedTests = await sql`SELECT * FROM speed_tests ORDER BY timestamp DESC`;
     } else {
         const days = parseInt(speedRange, 10);
@@ -47,14 +45,12 @@ export async function handler(event) {
         `;
     }
     
-    // 4. Fetch the last 10 downtime events
     const downtimeEvents = await sql`
       SELECT * FROM downtime_events 
       ORDER BY timestamp DESC 
       LIMIT 10
     `;
     
-    // Return all data in a single payload
     return {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json' },

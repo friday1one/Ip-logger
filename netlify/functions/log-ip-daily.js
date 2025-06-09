@@ -1,15 +1,15 @@
 
 // -----------------------------------------------------------------------------
 // FILE: netlify/functions/log-ip-daily.js
-// PURPOSE: A scheduled function (@daily) to automatically log IP details to Netlify DB.
+// PURPOSE: A scheduled function (@daily) to automatically log IP details.
+// VERSION: 4.0 (Robust Connection Handling)
 // -----------------------------------------------------------------------------
 
-import postgres from 'postgres';
+import { neon } from '@netlify/neon';
 import fetch from 'node-fetch';
 
-const sql = postgres(process.env.NETLIFY_DATABASE_URL, { ssl: 'require' });
-
 export async function handler() {
+  const sql = neon();
   console.log('Running daily IP log task...');
 
   try {
@@ -21,7 +21,6 @@ export async function handler() {
         throw new Error("Failed to fetch valid IP details from ipinfo.io");
     }
 
-    // Insert the new log into the 'ip_logs' table
     await sql`
       INSERT INTO ip_logs (ip, hostname, city, region, country, loc, org, postal, timezone)
       VALUES (${ipDetails.ip}, ${ipDetails.hostname}, ${ipDetails.city}, ${ipDetails.region}, ${ipDetails.country}, ${ipDetails.loc}, ${ipDetails.org}, ${ipDetails.postal}, ${ipDetails.timezone})
