@@ -1,13 +1,23 @@
-[functions]
-  # Directory for serverless functions
-  directory = "netlify/functions/"
-  # Scheduled function to log IP daily
-  [functions."log-ip-daily"]
-    schedule = "@daily"
+# netlify.toml
 
 [build]
-  publish = "dist" # Or wherever your built frontend assets are
-  functions = "netlify/functions" # This tells Netlify where your functions are located
+  # This tells Netlify to publish the content of the root directory.
+  # Since your index.html is likely in the root, this is the correct path.
+  publish = "."
 
-# If you have specific build commands
-# command = "npm run build"
+  # This tells Netlify where your serverless functions are located.
+  # Ensure this path matches the location of your `netlify/functions` folder.
+  functions = "netlify/functions"
+
+# You typically don't need a `command` for a simple static HTML site
+# unless you have specific pre-processing steps. If you have one that
+# is causing the build to fail, you might remove it or adjust it.
+# For this project, you likely don't need a build command at all.
+# command = "npm run build" # Example: uncomment and adjust if you have a build step
+
+# Scheduled function to log IP daily
+# This will trigger the netlify/functions/log-ip-daily.js function
+# based on the specified schedule.
+[[functions]]
+  function = "log-ip-daily"
+  schedule = "@daily" # Runs once every day
