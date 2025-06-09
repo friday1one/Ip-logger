@@ -1,7 +1,7 @@
 // -----------------------------------------------------------------------------
 // FILE: netlify/functions/save-speed-test.js
 // PURPOSE: Saves a new speed test result to Netlify DB, associated with the authenticated user.
-// VERSION: 1.1 (Protected and User-Specific - Final)
+// VERSION: 1.1 (Protected and User-Specific - FRESH COPY)
 // -----------------------------------------------------------------------------
 
 import { neon } from '@netlify/neon';

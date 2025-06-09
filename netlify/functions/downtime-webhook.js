@@ -3,7 +3,7 @@
 // PURPOSE: Receives webhook notifications and logs them to Netlify DB.
 //          This function is NOT protected by authentication, as webhooks
 //          typically come from external services without a user token.
-// VERSION: 4.0 (Robust Connection Handling - Final)
+// VERSION: 4.0 (Robust Connection Handling - FRESH COPY)
 // -----------------------------------------------------------------------------
 
 import { neon } from '@netlify/neon';
@@ -23,7 +23,7 @@ export async function handler(event) {
     // Determine the event type (UP/DOWN) and construct details from the payload.
     // This assumes a payload structure from a typical uptime monitoring service.
     const eventType = payload?.data?.attributes?.status === "up" ? "UP" : "DOWN";
-    const details = `Monitor: ${payload?.data?.attributes?.monitor_group_name || 'N/A'} - ${payload?.data?.attributes?.url || 'N/A'}. Cause: ${payload?.data?.attributes?.cause || 'N/A'}`;
+    const details = `Monitor: ${payload?.data?.attributes?.monitor_group_name || 'N/A'} - ${payload?.data?.attributes?.url || 'N/A'}. Cause: ${payload?.data?.attributes?.cause || 'N/A'}`;}
 
     // IMPORTANT: If downtime events are meant to be tied to a specific user,
     // you would need to find a way to pass the userId from the webhook sender,

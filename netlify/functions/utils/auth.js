@@ -1,20 +1,21 @@
 // -----------------------------------------------------------------------------
 // FILE: netlify/functions/utils/auth.js
-// PURPOSE: Helper functions for authentication (token generation and validation).
-// VERSION: 1.2 (Final, hardened for Node.js environment)
+// PURPOSE: Helper functions for authentication using jsonwebtoken.
+// VERSION: 2.0 (Using jsonwebtoken for JWTs - FRESH COPY)
 // -----------------------------------------------------------------------------
 
-// !!! WARNING: This is a simplified authentication mechanism for demonstration. !!!
-// !!! It is NOT secure for production use without significant enhancements.   !!!
-// !!! Specifically, proper JWT libraries and robust secret management (e.g., Netlify Environment Variables) are needed. !!!
+// !!! WARNING: This provides a more robust JWT implementation, but for production
+// !!!          you MUST still manage JWT_SECRET securely (e.g., Netlify Environment Variables).
+// !!!          Password hashing should use a dedicated library like bcrypt.
 
-import { createHash } from 'crypto'; // Node.js built-in crypto module
+import { createHash } from 'crypto'; // Still used for password hashing
+import jwt from 'jsonwebtoken';       // Import the jsonwebtoken library
 
 // IMPORTANT: Replace 'your_super_secret_jwt_key_here_change_me_in_prod'
 // with a strong, random string (e.g., 32+ characters).
 // In a real production app, set this as a Netlify Environment Variable (e.g., JWT_SECRET).
 const JWT_SECRET = process.env.JWT_SECRET || 'a_very_insecure_default_secret_for_dev_only_change_this_for_production_sentinel_project';
-const TOKEN_EXPIRY_HOURS = 24; // Token valid for 24 hours
+const TOKEN_EXPIRY_SECONDS = 60 * 60 * 24; // Token valid for 24 hours (in seconds)
 
 /**
  * Hashes a password using SHA256.
@@ -29,71 +30,28 @@ export function hashPassword(password) {
 }
 
 /**
- * Generates a simple JWT-like token for user authentication.
- * This is a custom, simplified token structure, not a standard JWT.
- * For robust, production-ready JWTs, use a library like 'jsonwebtoken'.
+ * Generates a JSON Web Token (JWT) for user authentication.
  * @param {object} payload - The data to embed in the token (e.g., { userId: 123, email: 'user@example.com' }).
- * @returns {string} The generated token string.
+ * @returns {string} The generated JWT string.
  */
 export function generateToken(payload) {
-  const header = { alg: 'HS256', typ: 'JWT' }; // Algorithm and type (simplified)
-  // Calculate expiry timestamp (milliseconds since epoch)
-  const expiry = Date.now() + TOKEN_EXPIRY_HOURS * 60 * 60 * 1000;
-  const data = { ...payload, exp: expiry }; // Combine payload with expiry
-
-  // Base64url encode header and data.
-  // Buffer.from(string, 'utf8') is crucial for consistent byte representation.
-  const base64EncodedHeader = Buffer.from(JSON.stringify(header), 'utf8').toString('base64url');
-  const base64EncodedData = Buffer.from(JSON.stringify(data), 'utf8').toString('base64url');
-
-  // Create the signature input string.
-  const signatureInput = `${base64EncodedHeader}.${base64EncodedData}`;
-  // Generate a simple HMAC-like signature using SHA256 and the secret.
-  const signature = createHash('sha256').update(Buffer.from(signatureInput + JWT_SECRET, 'utf8')).digest('hex');
-
-  // Concatenate parts to form the token.
-  return `${base64EncodedHeader}.${base64EncodedData}.${signature}`;
+  // jwt.sign handles the header, payload, signing, and expiry automatically.
+  return jwt.sign(payload, JWT_SECRET, { expiresIn: TOKEN_EXPIRY_SECONDS });
 }
 
 /**
- * Verifies a custom token and returns its payload if it's valid and not expired.
- * @param {string} token - The token string to verify.
+ * Verifies a JSON Web Token (JWT) and returns its payload if valid.
+ * @param {string} token - The JWT string to verify.
  * @returns {object|null} The decoded token payload if valid, otherwise null.
  */
 export function verifyToken(token) {
   try {
-    const parts = token.split('.');
-    // A valid token should have exactly three parts (header.payload.signature)
-    if (parts.length !== 3) {
-        console.warn('Token verification failed: Incorrect number of parts.');
-        return null;
-    }
-
-    const [headerB64, payloadB64, signature] = parts;
-
-    // Recreate the expected signature using the header, payload, and secret.
-    const expectedSignature = createHash('sha256').update(Buffer.from(`${headerB64}.${payloadB64}` + JWT_SECRET, 'utf8')).digest('hex');
-
-    // Compare the received signature with the expected signature.
-    if (signature !== expectedSignature) {
-      console.warn('Token verification failed: Signature mismatch.');
-      return null;
-    }
-
-    // Decode the payload from base64url and parse as JSON.
-    const decodedPayload = JSON.parse(Buffer.from(payloadB64, 'base64url').toString('utf8'));
-
-    // Check if the token has expired.
-    if (decodedPayload.exp && decodedPayload.exp < Date.now()) {
-      console.warn('Token verification failed: Token expired.');
-      return null;
-    }
-
-    // If all checks pass, return the decoded payload.
-    return decodedPayload;
+    // jwt.verify handles signature checking and expiry validation.
+    const decoded = jwt.verify(token, JWT_SECRET);
+    return decoded;
   } catch (error) {
     console.error('Error verifying token:', error.message);
-    return null; // Return null on any error during verification.
+    return null; // Return null on any verification error (e.g., invalid signature, expired).
   }
 }
 

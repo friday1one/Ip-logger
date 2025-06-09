@@ -3,7 +3,7 @@
 // PURPOSE: Receives the client's public IP from the frontend, checks if it has
 //          changed from the last logged IP for the authenticated user, and saves
 //          it to the database, associated with that user.
-// VERSION: 1.1 (Protected and User-Specific - Final)
+// VERSION: 1.1 (Protected and User-Specific - FRESH COPY)
 // -----------------------------------------------------------------------------
 
 import { neon } from '@netlify/neon';

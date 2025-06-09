@@ -3,7 +3,7 @@
  * FILE: netlify/functions/get-dashboard-data.js
  * PURPOSE: Fetches all data needed for the main dashboard view from Netlify DB,
  * filtered by the authenticated user.
- * VERSION: 6.2 (Protected and User-Specific Data - Final)
+ * VERSION: 6.2 (Protected and User-Specific Data - FRESH COPY)
  * -----------------------------------------------------------------------------
  */
 
@@ -42,10 +42,10 @@ export async function handler(event) {
       statusCode: 200,
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        currentIp,         // The most recent logged IP from this user's DB for "Live Status"
-        ipLogs,            //All IP logs for this user for "IP History"
-        speedTests,        //All speed tests for this user for "Speed History" chart
-        downtimeEvents,    //Recent downtime events for this user
+        currentIp,        // The most recent logged IP from this user's DB for "Live Status"
+        ipLogs,           // All IP logs for this user for "IP History"
+        speedTests,       // All speed tests for this user for "Speed History" chart
+        downtimeEvents,   // Recent downtime events for this user
       }),
     };
   } catch (error) {

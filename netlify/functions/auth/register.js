@@ -1,7 +1,7 @@
 // -----------------------------------------------------------------------------
 // FILE: netlify/functions/auth/register.js
 // PURPOSE: Handles new user registration (email, password hashing, saving to DB).
-// VERSION: 1.0 (Final)
+// VERSION: 1.0 (Final - FRESH COPY)
 // -----------------------------------------------------------------------------
 
 import { neon } from '@netlify/neon';

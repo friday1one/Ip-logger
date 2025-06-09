@@ -1,7 +1,7 @@
 // -----------------------------------------------------------------------------
 // FILE: netlify/functions/auth/login.js
 // PURPOSE: Handles user login (verifies password, issues a token).
-// VERSION: 1.0 (Final)
+// VERSION: 1.0 (Final - FRESH COPY)
 // -----------------------------------------------------------------------------
 
 import { neon } from '@netlify/neon';
