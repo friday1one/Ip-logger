@@ -1,8 +1,8 @@
 {
-  "type": "module",
   "name": "project-sentinel-functions",
   "version": "1.0.0",
-  "description": "Backend functions for Project Sentinel",
+  "type": "module",
+  "description": "Backend functions for Project Sentinel using Netlify DB",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -10,7 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@supabase/supabase-js": "^2.43.4",
+    "@netlify/neon": "^0.3.0",
     "node-fetch": "^3.3.2"
   }
 }

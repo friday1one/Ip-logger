@@ -1,18 +1,16 @@
 
 // -----------------------------------------------------------------------------
 // FILE: netlify/functions/log-ip-daily.js
-// PURPOSE: A scheduled function (@daily) to automatically log IP details.
-// VERSION: 2.0 (Self-contained Supabase client)
+// PURPOSE: A scheduled function (@daily) to automatically log IP details to Netlify DB.
 // -----------------------------------------------------------------------------
 
-import { createClient } from '@supabase/supabase-js';
+import postgres from 'postgres';
 import fetch from 'node-fetch';
+
+const sql = postgres(process.env.NETLIFY_DATABASE_URL, { ssl: 'require' });
 
 export async function handler() {
   console.log('Running daily IP log task...');
-  const supabaseUrl = process.env.SUPABASE_URL;
-  const supabaseKey = process.env.SUPABASE_KEY;
-  const supabase = createClient(supabaseUrl, supabaseKey);
 
   try {
     const response = await fetch('https://ipinfo.io/json');
@@ -23,17 +21,14 @@ export async function handler() {
         throw new Error("Failed to fetch valid IP details from ipinfo.io");
     }
 
-    const logData = {
-        ip: ipDetails.ip, hostname: ipDetails.hostname, city: ipDetails.city,
-        region: ipDetails.region, country: ipDetails.country, loc: ipDetails.loc,
-        org: ipDetails.org, postal: ipDetails.postal, timezone: ipDetails.timezone,
-    };
-    
-    const { error } = await supabase.from('ip_logs').insert([logData]);
-    if (error) throw new Error(`Supabase insert error: ${error.message}`);
+    // Insert the new log into the 'ip_logs' table
+    await sql`
+      INSERT INTO ip_logs (ip, hostname, city, region, country, loc, org, postal, timezone)
+      VALUES (${ipDetails.ip}, ${ipDetails.hostname}, ${ipDetails.city}, ${ipDetails.region}, ${ipDetails.country}, ${ipDetails.loc}, ${ipDetails.org}, ${ipDetails.postal}, ${ipDetails.timezone})
+    `;
 
-    console.log('Successfully logged new IP details:', logData);
-    return { statusCode: 200, body: JSON.stringify({ message: 'IP log successful', data: logData }) };
+    console.log('Successfully logged new IP details:', ipDetails.ip);
+    return { statusCode: 200, body: JSON.stringify({ message: 'IP log successful' }) };
   } catch (error) {
     console.error('Error in scheduled function log-ip-daily:', error);
     return { statusCode: 500, body: JSON.stringify({ error: error.message }) };
