@@ -3,19 +3,26 @@
  * FILE: netlify/functions/get-dashboard-data.js
  * PURPOSE: Fetches all data needed for the main dashboard view.
  * It handles filtering based on query parameters.
+ * VERSION: 2.0 (Self-contained Supabase client)
  * -----------------------------------------------------------------------------
  */
 
-import { supabase } from './_supabase-client.js';
+import { createClient } from '@supabase/supabase-js';
 import fetch from 'node-fetch';
 
 export async function handler(event) {
+  // Initialize Supabase client directly inside the function
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseKey = process.env.SUPABASE_KEY;
+  const supabase = createClient(supabaseUrl, supabaseKey);
+
   // Get query parameters for filtering
   const { ipRange = '7', speedRange = '7' } = event.queryStringParameters;
 
   try {
     // 1. Fetch current IP details from an external API
     const ipInfoResponse = await fetch('https://ipinfo.io/json');
+    if (!ipInfoResponse.ok) throw new Error(`IPinfo fetch failed with status: ${ipInfoResponse.status}`);
     const currentIp = await ipInfoResponse.json();
 
     // 2. Fetch IP logs from Supabase based on the requested range
@@ -66,7 +73,7 @@ export async function handler(event) {
     // Return all data in a single payload
     return {
       statusCode: 200,
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
       body: JSON.stringify({
         currentIp,
         ipLogs: ipLogsResult.data,

@@ -1,11 +1,11 @@
-// -----------------------------------------------------------------------------
-// FILE: netlify/functions/ping.js
-// PURPOSE: A simple endpoint for the frontend to hit for latency tests.
-// It does nothing but return a success response as quickly as possible.
-// -----------------------------------------------------------------------------
 
+// -----------------------------------------------------------------------------
+// The following functions do not need Supabase, so they remain unchanged.
+// FILE: netlify/functions/ping.js
+// -----------------------------------------------------------------------------
 export async function handler() {
     return {
         statusCode: 204, // No Content
+        headers: { 'Access-Control-Allow-Origin': '*' }
     };
 }
