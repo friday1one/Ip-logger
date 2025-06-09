@@ -10,7 +10,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
-    "@netlify/neon": "^0.3.0",
+    "@netlify/neon": "*",
     "node-fetch": "^3.3.2"
   }
 }
