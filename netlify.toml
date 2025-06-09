@@ -2,6 +2,3 @@
   publish = "."
   functions = "netlify/functions"
 
-[[functions]]
-  function = "log-ip-daily"
-  schedule = "@daily"
